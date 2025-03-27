@@ -37,13 +37,13 @@ export default function Home() {
           
           <button
             onClick={() => router.push("/login")}
-            className="bg-yellow-400 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white transition-colors"
+            className="bg-yellow-400 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 hover:text-blue-950 transition-colors"
           >
             Login
           </button>
           <button
             onClick={() => router.push("/register")}
-            className="bg-blue-950 text-white px-6 py-3 rounded-lg font-semibold hover:bg-white transition-colors"
+            className="bg-blue-950 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 hover:text-blue-950 transition-colors"
           >
             Register
           </button>

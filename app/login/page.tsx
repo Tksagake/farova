@@ -11,20 +11,33 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+  
     if (error) return setError(error.message);
-    router.push("/dashboard");
+  
+    const { user } = data;
+    const role = user?.user_metadata.role;
+  
+    if (role === "admin") {
+      router.push("/admin"); // Admin panel
+    } else {
+      router.push("/dashboard"); // Member area
+    }
   };
+  
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-950 to-[#16213e] p-4">
       <div className="backdrop-blur-lg bg-white/10 shadow-lg rounded-lg p-6 max-w-sm w-full animate-fade-in">
 
         {/* Logo & Brand Name */}
         <div className="flex flex-col items-center mb-6">
           <img src="/logoh.png" alt="Farova Logo" className="w-46 h-26" />
-          
-          <h3 className="text-yellow-300">Welcome Back</h3>
+          <h3 className="text-yellow-400">Welcome Back</h3>
         </div>
 
         {/* Login Form */}
@@ -35,7 +48,7 @@ export default function Login() {
               type="email"
               placeholder="you@example.com"
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded-lg border-none outline-none focus:ring-2 focus:ring-yellow-500 bg-white/20 text-white placeholder-gray-300"
+              className="w-full p-3 rounded-lg border-none outline-none focus:ring-2 focus:ring-yellow-400 bg-white/20 text-white placeholder-gray-300"
             />
           </div>
 
@@ -45,7 +58,7 @@ export default function Login() {
               type="password"
               placeholder="••••••••"
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-lg border-none outline-none focus:ring-2 focus:ring-yellow-500 bg-white/20 text-white placeholder-gray-300"
+              className="w-full p-3 rounded-lg border-none outline-none focus:ring-2 focus:ring-yellow-400 bg-white/20 text-white placeholder-gray-300"
             />
           </div>
 
@@ -53,16 +66,16 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full bg-yellow-500 text-gray-900 py-3 rounded-lg font-bold text-lg transition-transform hover:scale-105 active:scale-95"
+            className="w-full bg-yellow-400 text-blue-950 py-3 rounded-lg font-bold text-lg transition-transform hover:scale-105 active:scale-95"
           >
             Login
           </button>
         </form>
 
         {/* Register Link */}
-        <p className="mt-4 text-center text-yellow-300">
+        <p className="mt-4 text-center text-yellow-400">
           Don't have an account?{" "}
-          <a href="/register" className="underline hover:text-yellow-400">
+          <a href="/register" className="underline hover:text-yellow-300">
             Register here
           </a>
         </p>

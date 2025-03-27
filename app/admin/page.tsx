@@ -55,7 +55,20 @@ export default function Dashboard() {
     },
   ];
   
-  if (loading) return <p>Loading...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+            <div className="relative h-16 w-16 mx-auto mb-4">
+            <div className="absolute animate-spin rounded-full h-16 w-16 border-b-2 border-blue-950"></div>
+            <div className="absolute animate-spin rounded-full h-16 w-16 border-r-2 border-yellow-400" style={{ animationDelay: '0.2s' }}></div>
+            <div className="absolute animate-spin rounded-full h-16 w-16 border-t-2 border-black" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          <h2 className="text-xl font-semibold text-blue-950">Loading ...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">

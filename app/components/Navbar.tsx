@@ -19,7 +19,7 @@ import { supabase } from '../lib/supabase';
 import { User } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   {
     name: 'Loan Management',
     href: '/dashboard/loans',

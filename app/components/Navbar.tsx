@@ -65,11 +65,11 @@ export default function Sidebar() {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
     {
-      name: 'Loan Management',
+      name: 'Loans',
       href: '/dashboard/loans',
       icon: UserGroupIcon,
       children: [
-        { name: 'New Applications', href: '/dashboard/loans/applications' },
+        { name: 'New Applications', href: '/dashboard/loans/application' },
         { name: 'My Loans', href: '/dashboard/loans' },
       ],
     },

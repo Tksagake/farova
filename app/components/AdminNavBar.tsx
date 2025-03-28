@@ -45,7 +45,7 @@ const navigation = [
     icon: BanknotesIcon,
     children: [
       { name: 'All Members', href: '/admin/members' },
-      { name: 'Review Membership', href: '/admin/members/new' },
+      { name: 'Review Membership', href: '/admin/members/review' },
     ],
   },
   {

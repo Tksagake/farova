@@ -100,11 +100,11 @@ export default function Sidebar() {
       href: '/dashboard/reports',
       icon: ChartBarIcon,
       children: [
-        { name: 'Member Reports', href: '/dashboard/reports/members' },
-        { name: 'Financial Reports', href: '/dashboard/reports/finance' },
+        { name: 'Payment Statement', href: '/dashboard/reports/statement' },
+       // { name: '', href: '/dashboard/reports/finance' },
       ],
     },
-    { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
+    //{ name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
   ];
 
   if (!user) {

@@ -34,7 +34,7 @@ export default function Dashboard() {
   const quickActions = [
     {
       name: 'New Payment',
-      description: 'Generate a new receipt for a student',
+      description: 'Log a payment',
       href: '/admin/payments/new',
       icon: BanknotesIcon,
       color: 'bg-blue-100 text-blue-700',
@@ -49,8 +49,15 @@ export default function Dashboard() {
     {
       name: 'Members',
       description: 'Approve new registrarion',
-      href: '/admin/members/new',
+      href: '/admin/members/review',
       icon: UserPlusIcon,
+      color: 'bg-blue-100 text-blue-700',
+    },
+    {
+      name: 'Manage Loan',
+      description: 'Manage loan information',
+      href: '/admin/loans/applications',
+      icon: DocumentPlusIcon,
       color: 'bg-blue-100 text-blue-700',
     },
   ];

@@ -66,7 +66,7 @@ const navigation = [
       { name: 'Financial Reports', href: '/admin/reports/finance' },
     ],
   },
-  { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
+ // { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon },
 ];
 
 function classNames(...classes: string[]) {

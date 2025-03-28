@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/app/components/Navbar";
 import Link from "next/link";
+import AdminNavBar from "@/app/components/AdminNavBar";
 
 interface Member {
   user_id: string;
@@ -61,7 +62,7 @@ export default function MembersPage() {
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow">
-        <Navbar />
+        <AdminNavBar />
       </div>
 
       {/* Main Content */}

@@ -12,13 +12,35 @@ export default function Register() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signUp({
+    
+    // 1. First create the auth user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { role: "member" } },
+      options: {
+        data: {
+          role: "member",
+          full_name: name,
+          email: email  // Explicitly include in metadata
+        }
+      }
     });
   
-    if (error) return setError(error.message);
+    if (authError) return setError(authError.message);
+  
+    // 2. Then directly create the profile record
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: authData.user?.id,
+        user_id: authData.user?.id,
+        email: email,
+        full_name: name,
+        status: 'pending'
+      });
+  
+    if (profileError) return setError(profileError.message);
+  
     router.push("/login");
   };
 

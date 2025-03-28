@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Navbar from "@/app/components/Navbar";
+import AdminNavBar from "@/app/components/AdminNavBar";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,40 +21,40 @@ interface Loan {
   balance_due: number;
 }
 
-export default function PaymentUploadPage() {
+interface Member {
+  id: string;
+  full_name: string;
+}
+
+export default function AdminPaymentLogPage() {
+  const [memberName, setMemberName] = useState<string>("");
+  const [members, setMembers] = useState<Member[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(0);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [selectedLoanId, setSelectedLoanId] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
 
-  // Fetch user and their loans
-  useEffect(() => {
-    const fetchUserAndLoans = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("User not authenticated");
+  // Fetch members based on the search query
+  const fetchMembers = async (query: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .ilike("full_name", `%${query}%`);
 
-        setUserId(user.id);
-        const userLoans = await fetchLoans(user.id);
-        setLoans(userLoans);
+    if (error) {
+      console.error("Error fetching members:", error);
+      setMessage({ text: "Failed to fetch member data", type: "error" });
+      return [];
+    }
 
-        if (userLoans.length > 0) {
-          setSelectedLoanId(userLoans[0].id);
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        setMessage({ text: "Failed to load user data", type: "error" });
-      }
-    };
+    return data;
+  };
 
-    fetchUserAndLoans();
-  }, []);
-
-  // Fetch all loans linked to a user
-  const fetchLoans = async (userId: string) => {
+  // Fetch loans for the selected member
+  const fetchLoans = async (memberId: string) => {
     const { data, error } = await supabase
       .from("loans")
       .select(`
@@ -67,10 +68,14 @@ export default function PaymentUploadPage() {
         total_due,
         balance_due
       `)
-      .eq("member_id", userId)
+      .eq("member_id", memberId)
       .in("status", ["approved", "disbursed", "partially_repaid"]);
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching loans:", error);
+      setMessage({ text: "Failed to load loans", type: "error" });
+      return [];
+    }
 
     // Calculate balance_due dynamically
     const loansWithBalance = await Promise.all(
@@ -101,6 +106,33 @@ export default function PaymentUploadPage() {
     return totalAmountPaid;
   };
 
+  // Handle member name input change
+  const handleMemberNameChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setMemberName(query);
+
+    if (query.length > 2) { // Fetch members only if the query is longer than 2 characters
+      const fetchedMembers = await fetchMembers(query);
+      setMembers(fetchedMembers);
+    } else {
+      setMembers([]);
+    }
+  };
+
+  // Handle member selection from dropdown
+  const handleMemberSelect = async (memberId: string, memberFullName: string) => {
+    setSelectedMemberId(memberId);
+    setMemberName(memberFullName); // Fill the search bar with the selected member's name
+    setMembers([]); // Clear the dropdown after selection
+
+    const memberLoans = await fetchLoans(memberId);
+    setLoans(memberLoans);
+
+    if (memberLoans.length > 0) {
+      setSelectedLoanId(memberLoans[0].id);
+    }
+  };
+
   // Get the selected loan details
   const selectedLoan = loans.find((loan) => loan.id === selectedLoanId);
 
@@ -111,7 +143,7 @@ export default function PaymentUploadPage() {
 
   // Handle payment and proof upload
   const handleFileUpload = async () => {
-    if (!amount || !file || !selectedLoanId) {
+    if (!amount || !file || !selectedLoanId || !selectedMemberId) {
       setMessage({ text: "Please complete all fields", type: "error" });
       return;
     }
@@ -155,8 +187,8 @@ export default function PaymentUploadPage() {
         loan_id: selectedLoanId,
         amount_paid: amount,
         proof_url: proofUrl,
-        status: "pending",
-        user_id: userId,
+        status: "approved", // Admin logs are directly approved
+        user_id: selectedMemberId,
       });
 
       if (repaymentError) throw repaymentError;
@@ -173,12 +205,12 @@ export default function PaymentUploadPage() {
 
       if (updateError) throw updateError;
 
-      setMessage({ text: "Payment uploaded successfully. Pending admin approval.", type: "success" });
+      setMessage({ text: "Payment logged successfully.", type: "success" });
       setAmount(0);
       setFile(null);
 
       // Refresh loan data
-      const updatedLoans = await fetchLoans(userId);
+      const updatedLoans = await fetchLoans(selectedMemberId);
       setLoans(updatedLoans);
     } catch (error) {
       console.error("Payment processing error:", error);
@@ -192,13 +224,13 @@ export default function PaymentUploadPage() {
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow">
-        <Navbar />
+        <AdminNavBar />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-semibold mb-6 text-blue-950">Upload Proof of Payment</h2>
+          <h2 className="text-2xl font-semibold mb-6 text-blue-950">Log Payment for Member</h2>
 
           {message && (
             <div
@@ -213,6 +245,30 @@ export default function PaymentUploadPage() {
           )}
 
           <div className="space-y-6">
+            {/* Member Name Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                value={memberName}
+                onChange={handleMemberNameChange}
+                placeholder="Search member name"
+                className="w-full p-3 border border-gray-300 rounded-md"
+              />
+              {members.length > 0 && (
+                <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-48 overflow-y-auto">
+                  {members.map((member) => (
+                    <li
+                      key={member.id}
+                      onClick={() => handleMemberSelect(member.id, member.full_name)}
+                      className="p-3 cursor-pointer hover:bg-gray-100"
+                    >
+                      {member.full_name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             {/* Loan Selection */}
             {loans.length > 0 ? (
               <select
@@ -227,7 +283,7 @@ export default function PaymentUploadPage() {
                 ))}
               </select>
             ) : (
-              <p className="text-yellow-700">No approved loans found. Please apply for a loan.</p>
+              <p className="text-yellow-700">No approved loans found for this member.</p>
             )}
 
             {/* Balance Display */}

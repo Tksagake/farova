@@ -2,8 +2,11 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabase";
 import Navbar from "@/app/components/Navbar";
+import Link from "next/link";
+import AdminNavBar from "@/app/components/AdminNavBar";
 
 interface Profile {
+  created_at: string | number | Date;
   user_id: string;
   full_name: string;
   email: string;
@@ -19,37 +22,25 @@ export default function AdminDashboard() {
   const [pendingProfiles, setPendingProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
-  // Fetch Pending Profiles with proper filtering
   useEffect(() => {
     const fetchPendingProfiles = async () => {
       setLoading(true);
       setError("");
       try {
-        // Query with both status and metadata.usertype conditions
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
           .eq("status", "pending")
-
           .order("created_at", { ascending: true });
 
         if (error) throw error;
         
-        console.log("Fetched profiles:", {
-          count: data?.length,
-          profiles: data?.map((p: { user_id: any; status: any; metadata: { usertype: any; }; }) => ({
-            id: p.user_id,
-            status: p.status,
-            usertype: p.metadata?.usertype
-          }))
-        });
-
+        console.log("Pending profiles:", data);
         setPendingProfiles(data || []);
       } catch (error: any) {
-        console.error("Full error details:", error);
-        setError(`Error fetching profiles: ${error.message || 'Unknown error'}`);
+        console.error("Error:", error);
+        setError(`Failed to load profiles: ${error.message}`);
       } finally {
         setLoading(false);
       }
@@ -58,54 +49,19 @@ export default function AdminDashboard() {
     fetchPendingProfiles();
   }, []);
 
-  // Approve or Reject User with proper type checking
-  const updateStatus = async (userId: string, newStatus: "approved" | "rejected") => {
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    
-    try {
-      // Verify the profile exists before updating
-      const profileToUpdate = pendingProfiles.find(p => p.user_id === userId);
-      if (!profileToUpdate) {
-        throw new Error("Profile not found");
-      }
-
-      // Verify usertype is regular
-      if (profileToUpdate.metadata?.usertype !== "regular") {
-        throw new Error("Can only update regular users");
-      }
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ status: newStatus })
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      setPendingProfiles(prev => prev.filter(p => p.user_id !== userId));
-      setSuccess(`User ${newStatus} successfully!`);
-    } catch (error: any) {
-      console.error("Update error:", error);
-      setError(`Failed to update status: ${error.message || 'Unknown error'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow">
-        <Navbar />
+        <AdminNavBar />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold text-blue-950">Admin Dashboard</h2>
-            <div className="flex items-center space-x-2">
+            <h2 className="text-3xl font-bold text-blue-950">Pending Member Approvals</h2>
+            <div className="flex items-center space-x-2 text-blue-950" >
               <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
                 {pendingProfiles.length} Pending
               </span>
@@ -127,25 +83,19 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {success && (
-            <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-              {success}
-            </div>
-          )}
-
           {loading ? (
             <div className="text-center p-10">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              <p className="mt-2">Processing...</p>
+              <p className="mt-2">Loading pending members...</p>
             </div>
           ) : pendingProfiles.length === 0 ? (
             <div className="p-6 bg-white rounded-lg shadow">
-              <p className="text-gray-600">No pending regular user profiles to approve.</p>
+              <p className="text-gray-600">No pending members requiring approval.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {pendingProfiles.map((profile) => (
-                <div key={profile.user_id} className="border p-6 rounded-lg shadow-sm bg-white">
+                <div key={profile.user_id} className="border p-6 rounded-lg shadow-sm bg-white text-blue-950">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="font-semibold">Name:</p>
@@ -156,34 +106,25 @@ export default function AdminDashboard() {
                       <p>{profile.email || "Not provided"}</p>
                     </div>
                     <div>
-                      <p className="font-semibold">Phone:</p>
-                      <p>{profile.phone_number || "Not provided"}</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold">National ID:</p>
-                      <p>{profile.national_id || "Not provided"}</p>
-                    </div>
-                    <div>
                       <p className="font-semibold">User Type:</p>
-                      <p>{profile.metadata?.usertype || "Not specified"}</p>
+                      <p className="capitalize">{profile.metadata?.usertype || "regular"}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">Application Date:</p>
+                      <p>{new Date(profile.created_at).toLocaleDateString()}</p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    <button
-                      onClick={() => updateStatus(profile.user_id, "approved")}
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
-                      disabled={loading || profile.metadata?.usertype !== "regular"}
+                  <div className="flex justify-end mt-4">
+                    <Link
+                      href={`/admin/members/${profile.user_id}`}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center space-x-2"
                     >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => updateStatus(profile.user_id, "rejected")}
-                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
-                      disabled={loading || profile.metadata?.usertype !== "regular"}
-                    >
-                      Reject
-                    </button>
+                      <span>Review Application</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </Link>
                   </div>
                 </div>
               ))}

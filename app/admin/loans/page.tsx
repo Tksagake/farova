@@ -29,11 +29,14 @@ interface Profile {
 
 const LoansPage = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
+  const [filteredLoans, setFilteredLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [memberDetailsMap, setMemberDetailsMap] = useState<Map<string, Profile>>(new Map());
   const [notes, setNotes] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   useEffect(() => {
     const fetchLoans = async () => {
@@ -75,6 +78,17 @@ const LoansPage = () => {
 
     fetchLoans();
   }, []);
+
+  useEffect(() => {
+    // Filter loans based on search query and selected status
+    const filtered = loans.filter(loan => {
+      const memberDetails = memberDetailsMap.get(loan.member_id);
+      const matchesSearch = !searchQuery || memberDetails?.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = selectedStatus === 'all' || loan.status === selectedStatus;
+      return matchesSearch && matchesStatus;
+    });
+    setFilteredLoans(filtered);
+  }, [searchQuery, selectedStatus, loans, memberDetailsMap]);
 
   const openModal = (loan: Loan) => {
     setSelectedLoan(loan);
@@ -164,7 +178,30 @@ const LoansPage = () => {
       <div className="flex-1 p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-2xl font-semibold mb-6 text-blue-950">Loan Management</h2>
 
-        {loans.length === 0 ? (
+        {/* Search Bar */}
+        <input
+          type="text"
+          placeholder="Search by member name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="mb-4 p-2 border rounded w-full"
+        />
+
+        {/* Status Filter */}
+        <select
+          className="mb-4 p-2 border rounded w-full"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+        >
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="disbursed">Disbursed</option>
+          <option value="partially_repaid">Partially Repaid</option>
+          <option value="fully_repaid">Fully Repaid</option>
+          <option value="defaulted">Defaulted</option>
+        </select>
+
+        {filteredLoans.length === 0 ? (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative">
             <strong className="font-bold">Notice:</strong>
             <span className="block sm:inline"> No loans available.</span>
@@ -184,7 +221,7 @@ const LoansPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {loans.map((loan) => {
+                {filteredLoans.map((loan) => {
                   const memberDetails = memberDetailsMap.get(loan.member_id);
                   return (
                     <tr key={loan.id} className="border-t">
@@ -225,7 +262,6 @@ const LoansPage = () => {
                 value={selectedLoan.status}
                 onChange={(e) => setSelectedLoan({ ...selectedLoan, status: e.target.value })}
               >
-                
                 <option value="disbursed">Disbursed</option>
                 <option value="partially_repaid">Partially Repaid</option>
                 <option value="fully_repaid">Fully Repaid</option>

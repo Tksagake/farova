@@ -34,7 +34,7 @@ const navigation = [
     href: '/admin/payments',
     icon: CalendarIcon,
     children: [
-      { name: 'Payment Tracking', href: '/admin/payments/tracking' },
+      { name: 'Payment Tracking', href: '/admin/payments' },
       { name: 'New Payment', href: '/admin/payments/new' },
       { name: 'Payment History', href: '/admin/payments/history' },
     ],

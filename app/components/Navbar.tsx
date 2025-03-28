@@ -78,9 +78,8 @@ export default function Sidebar() {
       href: '/dashboard/payments',
       icon: CalendarIcon,
       children: [
-        { name: 'Payment Tracking', href: '/dashboard/payments/tracking' },
         { name: 'New Payment', href: '/dashboard/payments/new' },
-        { name: 'Payment History', href: '/dashboard/payments/history' },
+        { name: 'Payment Tracking', href: '/dashboard/payments/history' },
       ],
     },
     {

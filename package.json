@@ -9,9 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.49.3",
+    "date-fns": "^4.1.0",
     "farova": "file:",
+    "headlessui": "^0.0.0",
     "heroicons": "^2.2.0",
     "next": "15.2.4",
     "postcss": "^8.5.3",

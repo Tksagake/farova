@@ -32,9 +32,9 @@ interface LoanType {
 }
 
 const loanTypes: LoanType[] = [
-  { type: 'Personal', interest_rate: 10, min_repayment_period: 6, max_repayment_period: 24 },
-  { type: 'Business', interest_rate: 12, min_repayment_period: 12, max_repayment_period: 60 },
-  { type: 'Education', interest_rate: 8, min_repayment_period: 24, max_repayment_period: 48 },
+  { type: 'Personal', interest_rate: 10, min_repayment_period: 1, max_repayment_period: 24 },
+  { type: 'Business', interest_rate: 12, min_repayment_period: 1, max_repayment_period: 60 },
+  { type: 'Education', interest_rate: 8, min_repayment_period: 1, max_repayment_period: 48 },
 ];
 
 const LoanApplicationForm = () => {

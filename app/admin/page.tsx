@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import { UserPlusIcon } from "lucide-react";
 import { DocumentPlusIcon, EnvelopeOpenIcon, BanknotesIcon } from "@heroicons/react/24/outline";
-import Navbar from "../components/AdminNavBar";
+import AdminNavBar from "../components/AdminNavBar";
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,7 @@ export default function Dashboard() {
     <div className="min-h-screen flex">
       {/* Navbar fixed on the left */}
       <div className="fixed left-0 top-0 h-full w-64">
-        <Navbar />
+        <AdminNavBar />
       </div>
       
       {/* Main content area with left margin */}

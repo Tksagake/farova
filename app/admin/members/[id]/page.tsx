@@ -130,7 +130,7 @@ export default function MemberProfile() {
             <strong className="font-bold">Error!</strong>
             <span className="block sm:inline"> {error}</span>
             <button
-              onClick={() => router.push("/admin/dashboard")}
+              onClick={() => router.push("/admin")}
               className="mt-4 bg-blue-950 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded"
             >
               Back to Dashboard
@@ -152,7 +152,7 @@ export default function MemberProfile() {
             <strong className="font-bold">Notice</strong>
             <span className="block sm:inline"> Profile not found.</span>
             <button
-              onClick={() => router.push("/admin/dashboard")}
+              onClick={() => router.push("/admin")}
               className="mt-4 bg-blue-950 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded"
             >
               Back to Dashboard

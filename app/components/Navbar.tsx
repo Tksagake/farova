@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -14,51 +14,8 @@ import {
   Cog6ToothIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
-import router from 'next/router';
-import { supabase } from '../lib/supabase';
 import { User } from 'lucide-react';
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  {
-    name: 'Loan Management',
-    href: '/dashboard/loans',
-    icon: UserGroupIcon,
-    children: [
-      { name: ' New Applications', href: '/dashboard/loans/applications' },
-      { name: 'My Loans', href: '/dashboard/loans' },
-    ],
-  },
-  {
-    name: 'Payments',
-    href: '/dashboards/payments',
-    icon: CalendarIcon,
-    children: [
-      { name: 'Payment Tracking', href: '/dashboard/payments/tracking' },
-      { name: 'New Payment', href: '/dashboard/payments/new' },
-      { name: 'Payment History', href: '/dasboard/payments/history'},
-    ],
-  },
-  {
-    name: 'Me',
-    href: '/member/[id]',
-    icon: User,
-    children: [
-      { name: 'My Profile', href: '/dashboard/member/[id]' },
-    ],
-  },
-  
-  {
-    name: 'Reports',
-    href: '/dashboard/reports',
-    icon: ChartBarIcon,
-    children: [
-      { name: 'Member Reports', href: '/admin/reports/memebrs' },
-      { name: 'Financial Reports', href: '/admin/reports/finance' },
-    ],
-  },
-  { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
-];
+import { supabase } from '../lib/supabase';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -66,12 +23,27 @@ function classNames(...classes: string[]) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
+  const [user, setUser] = useState<any>(null); // Store user info
+
+  // Fetch user info on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+      } else {
+        router.push('/login'); // Redirect if not authenticated
+      }
+    };
+    fetchUser();
+  }, [router]);
 
   const toggleMenu = (name: string) => {
-    setOpenMenus(prev => 
-      prev.includes(name) 
-        ? prev.filter(item => item !== name)
+    setOpenMenus((prev) =>
+      prev.includes(name)
+        ? prev.filter((item) => item !== name)
         : [...prev, name]
     );
   };
@@ -85,9 +57,59 @@ export default function Sidebar() {
     if (error) {
       console.error('Error logging out:', error.message);
     } else {
-      router.push('/login'); // Use router.push from useRouter
+      router.push('/login');
     }
   };
+
+  // Navigation with dynamic user profile link
+  const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+    {
+      name: 'Loan Management',
+      href: '/dashboard/loans',
+      icon: UserGroupIcon,
+      children: [
+        { name: 'New Applications', href: '/dashboard/loans/applications' },
+        { name: 'My Loans', href: '/dashboard/loans' },
+      ],
+    },
+    {
+      name: 'Payments',
+      href: '/dashboard/payments',
+      icon: CalendarIcon,
+      children: [
+        { name: 'Payment Tracking', href: '/dashboard/payments/tracking' },
+        { name: 'New Payment', href: '/dashboard/payments/new' },
+        { name: 'Payment History', href: '/dashboard/payments/history' },
+      ],
+    },
+    {
+      name: 'Me',
+      href: `/dashboard/member/${user?.id || ''}`, // Dynamic link
+      icon: User,
+      children: [
+        {
+          name: 'My Profile',
+          href: `/dashboard/member/${user?.id || ''}`, // Dynamic link
+        },
+        { name: 'Edit Profile', href: '/dashboard/complete-profile' },
+      ],
+    },
+    {
+      name: 'Reports',
+      href: '/dashboard/reports',
+      icon: ChartBarIcon,
+      children: [
+        { name: 'Member Reports', href: '/dashboard/reports/members' },
+        { name: 'Financial Reports', href: '/dashboard/reports/finance' },
+      ],
+    },
+    { name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
+  ];
+
+  if (!user) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 border-r border-gray-200 bg-blue-950 shadow-sm">
@@ -169,7 +191,7 @@ export default function Sidebar() {
                   >
                     <item.icon
                       className={classNames(
-                        isActive(item.href) ? 'text-blue-950' : 'text-gray-500 group-hover:text-blue-950',
+                        isActive(item.href) ? 'text-blue-950' : 'text-white group-hover:text-blue-950',
                         'mr-3 h-5 w-5 flex-shrink-0'
                       )}
                       aria-hidden="true"
@@ -180,12 +202,14 @@ export default function Sidebar() {
               </div>
             ))}
           </div>
-          <button 
-            onClick={handleLogout}
-            className="bg-yellow-500 hover:bg-white-600 text-white font-bold py-2 px-4 rounded mb-4"
-          >
-            Logout
-          </button>
+          <div className="mt-4 px-3">
+            <button
+              onClick={handleLogout}
+              className="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-bold py-2 px-4 rounded transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </nav>
       </div>
     </div>

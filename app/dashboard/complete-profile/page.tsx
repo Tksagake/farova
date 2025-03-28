@@ -105,10 +105,14 @@ export default function CompleteProfile() {
 
   const uploadFile = async (file: File, path: string) => {
     const { data, error } = await supabase.storage
-      .from("userdata")
-      .upload(path, file);
-    if (error) throw new Error(error.message);
-    return data.path;
+      .from("userdata") // Use the correct bucket name
+      .upload(path, file, { upsert: true }); // Allows overwriting if a file already exists
+
+    if (error) {
+      console.error("Upload Error:", error);
+      throw new Error(error.message);
+    }
+    return data?.path;
   };
 
   // Ensure all fields are filled
@@ -131,12 +135,16 @@ export default function CompleteProfile() {
       if (!user) throw new Error("User not found");
       const userId = user.data.user?.id;
 
-      // Upload images
+      // Upload images with consistent paths
       const passportImagePath = passportImage
-        ? await uploadFile(passportImage, `passport/${userId}`)
+        ? await uploadFile(passportImage, `passport/${userId}/passport.jpg`)
         : null;
-      const idImagePath = idImage ? await uploadFile(idImage, `id/${userId}`) : null;
-      const kraImagePath = kraImage ? await uploadFile(kraImage, `kra/${userId}`) : null;
+      const idImagePath = idImage
+        ? await uploadFile(idImage, `id/${userId}/id.jpg`)
+        : null;
+      const kraImagePath = kraImage
+        ? await uploadFile(kraImage, `kra/${userId}/kra.jpg`)
+        : null;
 
       const payload = {
         user_id: userId,
@@ -205,7 +213,7 @@ export default function CompleteProfile() {
                   value={form[field as keyof FormState]}
                   onChange={handleChange}
                   className="w-full max-w-md p-1 border rounded-md"
-                  disabled={!!form[field as keyof FormState]}
+                  disabled={field === "full_name" || field === "email"} // Disable only name and email
                 />
               </div>
             ))}
@@ -225,16 +233,21 @@ export default function CompleteProfile() {
                   value={form[field as keyof FormState]}
                   onChange={handleChange}
                   className="w-full max-w-md p-1 border rounded-md"
-                  disabled={!!form[field as keyof FormState]}
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRefs[field === "national_id" ? "id" : "kra"].current?.click()}
-                  disabled={!form[field as keyof FormState]}
-                  className="mt-1 bg-blue-950 text-white px-2 py-1 rounded-lg hover:bg-blue-900"
-                >
-                  Choose File
-                </button>
+                <div className="mt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRefs[field === "national_id" ? "id" : "kra"].current?.click()}
+                    className="bg-blue-950 text-white px-2 py-1 rounded-lg hover:bg-blue-900"
+                  >
+                    Choose File
+                  </button>
+                  {(field === "national_id" ? idImage : kraImage) && (
+                    <span className="ml-2 text-gray-600">
+                      {(field === "national_id" ? idImage : kraImage)?.name}
+                    </span>
+                  )}
+                </div>
                 <input
                   type="file"
                   ref={fileInputRefs[field === "national_id" ? "id" : "kra"]}
@@ -245,14 +258,20 @@ export default function CompleteProfile() {
             ))}
             <div className="text-blue-950">
               <label className="block text-xs font-medium text-blue-950">PROFILE PICTURE</label>
-              <button
-                type="button"
-                onClick={() => fileInputRefs.passport.current?.click()}
-                disabled={!form.full_name}
-                className="mt-1 bg-blue-950 text-white px-2 py-1 rounded-lg hover:bg-blue-900"
-              >
-                Choose File
-              </button>
+              <div className="mt-1">
+                <button
+                  type="button"
+                  onClick={() => fileInputRefs.passport.current?.click()}
+                  className="bg-blue-950 text-white px-2 py-1 rounded-lg hover:bg-blue-900"
+                >
+                  Choose File
+                </button>
+                {passportImage && (
+                  <span className="ml-2 text-gray-600">
+                    {passportImage.name}
+                  </span>
+                )}
+              </div>
               <input
                 type="file"
                 ref={fileInputRefs.passport}
@@ -276,7 +295,6 @@ export default function CompleteProfile() {
                   value={form[field as keyof FormState]}
                   onChange={handleChange}
                   className="w-full max-w-md p-1 border rounded-md"
-                  disabled={!!form[field as keyof FormState]}
                 />
               </div>
             ))}
@@ -285,7 +303,34 @@ export default function CompleteProfile() {
           {/* Additional Information Section */}
           <div className="border p-3 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold mb-2 text-blue-950">Additional Information</h3>
-            {["marital_status", "spouse_name", "religion", "disability", "occupation", "salary_type"].map((field) => (
+            <div className="text-blue-950">
+              <label className="block text-xs font-medium text-blue-950">MARITAL STATUS</label>
+              <select
+                name="marital_status"
+                value={form.marital_status}
+                onChange={handleChange}
+                className="w-full max-w-md p-1 border rounded-md"
+              >
+                <option value="">Select</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+              </select>
+            </div>
+            {form.marital_status !== "single" && form.marital_status !== "divorced" && (
+              <div className="text-blue-950">
+                <label className="block text-xs font-medium text-blue-950">SPOUSE'S NAME</label>
+                <input
+                  type="text"
+                  name="spouse_name"
+                  value={form.spouse_name}
+                  onChange={handleChange}
+                  className="w-full max-w-md p-1 border rounded-md"
+                />
+              </div>
+            )}
+            {["religion", "disability", "occupation", "salary_type"].map((field) => (
               <div className="text-blue-950" key={field}>
                 <label className="block text-xs font-medium text-blue-950">
                   {field.replace("_", " ").toUpperCase()}
@@ -296,7 +341,6 @@ export default function CompleteProfile() {
                   value={form[field as keyof FormState]}
                   onChange={handleChange}
                   className="w-full max-w-md p-1 border rounded-md"
-                  disabled={!!form[field as keyof FormState]}
                 />
               </div>
             ))}

@@ -13,7 +13,33 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const router = useRouter();
+
+  // Handle sidebar collapse state from localStorage and window size
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    // Check localStorage for saved preference
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    } else if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Sync sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     const getUser = async () => {
@@ -25,12 +51,10 @@ export default function MemberDashboard() {
 
       setUser(data.user);
 
-      // Check if the name is in user_metadata
       if (data.user.user_metadata.name) {
         setUserName(data.user.user_metadata.name);
         setLoading(false);
       } else {
-        // Fetch the name from the profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('full_name')
@@ -38,14 +62,13 @@ export default function MemberDashboard() {
           .single();
 
         if (profileError || !profileData) {
-          setUserName(data.user.email || null); // Ensure email is a string or null
+          setUserName(data.user.email || null);
         } else {
           setUserName(profileData.full_name);
         }
         setLoading(false);
       }
 
-      // Redirect admins to their dashboard
       if (data.user.user_metadata.role === "admin") {
         router.push("/dashboard");
       }
@@ -109,14 +132,18 @@ export default function MemberDashboard() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="fixed left-0 top-0 h-full w-64">
-        <Navbar />
+      {/* Sidebar - now controlled by collapsed state */}
+      <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <Navbar 
+          collapsed={sidebarCollapsed} 
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        />
       </div>
 
-      <div className="ml-64 flex-1 p-8 bg-white">
+      {/* Main content - adjust margin based on sidebar state */}
+      <div className={`flex-1 p-8 bg-white transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'}`}>
         <div className="flex flex-col items-center justify-center">
           <h1 className="text-2xl font-bold mb-4 text-blue-950">Member Dashboard</h1>
-
           <p className="text-gray-600 mb-6">Welcome, {userName}</p>
 
           <div className="mt-8 w-full">

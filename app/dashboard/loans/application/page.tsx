@@ -56,6 +56,7 @@ const requiredProfileFields: (keyof Profile)[] = [
 
 const LoanApplicationForm = () => {
   const router = useRouter();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [form, setForm] = useState({
     amount_requested: 0,
     purpose: '',
@@ -71,6 +72,21 @@ const LoanApplicationForm = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileComplete, setProfileComplete] = useState(false);
+
+  // Handle sidebar collapse state
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    } else if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  // Sync sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     const fetchProfileAndGuarantors = async () => {
@@ -261,14 +277,12 @@ const LoanApplicationForm = () => {
         }),
       });
   
-      // Check if the response status is OK (status code 200-299)
       if (!response.ok) {
         throw new Error(`Failed to send email: ${response.statusText}`);
       }
   
       const data = await response.json();
   
-      // Ensure the response indicates success
       if (data.success) {
         console.log(`Email sent to ${to}`);
       } else {
@@ -276,19 +290,17 @@ const LoanApplicationForm = () => {
       }
     } catch (error) {
       console.error('Error sending email:', error);
-      // Optionally, rethrow the error if you want to handle it further up the call stack
       throw error;
     }
   };
-  
 
   if (loading) {
     return (
       <div className="flex min-h-screen bg-white">
-        <div className="w-64">
-          <Navbar />
+        <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+          <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} flex items-center justify-center`}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-700 mb-4"></div>
             <h2 className="text-xl font-semibold text-blue-950">Loading...</h2>
@@ -301,10 +313,10 @@ const LoanApplicationForm = () => {
   if (error) {
     return (
       <div className="flex min-h-screen bg-white">
-        <div className="w-64">
-          <Navbar />
+        <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+          <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
         </div>
-        <div className="flex-1 p-8">
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8`}>
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
             <strong className="font-bold">Error!</strong>
             <span className="block sm:inline"> {error}</span>
@@ -327,12 +339,12 @@ const LoanApplicationForm = () => {
   return (
     <div className="flex min-h-screen bg-white">
       {/* Sidebar */}
-      <div className="w-64">
-        <Navbar />
+      <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 bg-white rounded-lg shadow-lg">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 bg-white rounded-lg shadow-lg`}>
         <h2 className="text-2xl font-semibold mb-6 text-blue-950">Apply for a Loan</h2>
 
         {!profileComplete && (

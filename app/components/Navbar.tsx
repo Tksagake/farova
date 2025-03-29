@@ -17,15 +17,32 @@ import {
 import { User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+interface NavbarProps {
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-export default function Sidebar() {
+export default function Navbar({ collapsed, onToggleCollapse }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
-  const [user, setUser] = useState<any>(null); // Store user info
+  const [user, setUser] = useState<any>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile/small screens
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768); // Tailwind's md breakpoint
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
 
   // Fetch user info on mount
   useEffect(() => {
@@ -34,7 +51,7 @@ export default function Sidebar() {
       if (user) {
         setUser(user);
       } else {
-        router.push('/login'); // Redirect if not authenticated
+        router.push('/login');
       }
     };
     fetchUser();
@@ -84,12 +101,12 @@ export default function Sidebar() {
     },
     {
       name: 'Me',
-      href: `/dashboard/member/${user?.id || ''}`, // Dynamic link
+      href: `/dashboard/member/${user?.id || ''}`,
       icon: User,
       children: [
         {
           name: 'My Profile',
-          href: `/dashboard/member/${user?.id || ''}`, // Dynamic link
+          href: `/dashboard/member/${user?.id || ''}`,
         },
         { name: 'Edit Profile', href: '/dashboard/complete-profile' },
       ],
@@ -100,33 +117,52 @@ export default function Sidebar() {
       icon: ChartBarIcon,
       children: [
         { name: 'Payment Statement', href: '/dashboard/reports/statement' },
-       // { name: '', href: '/dashboard/reports/finance' },
       ],
     },
-    //{ name: 'Settings', href: '/dashboard/settings', icon: Cog6ToothIcon },
   ];
 
   if (!user) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-full bg-blue-950">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 border-r border-gray-200 bg-blue-950 shadow-sm">
+    <div className={`fixed left-0 top-0 h-full bg-blue-950 shadow-sm transition-all duration-300 ease-in-out ${collapsed ? 'w-16' : 'w-64'}`}>
       <div className="flex h-full flex-col">
-        {/* Logo Section */}
-        <div className="flex h-16 items-center justify-center border-b border-gray-200 px-4 bg-white">
-          <Image
-            className="h-25 w-auto"
-            src="/logo.png"
-            alt="Logo"
-            width={160}
-            height={70}
-            priority
-          />
+        {/* Logo Section with Toggle Button */}
+        <div className={`flex items-center justify-between border-b border-gray-200 px-4 bg-white ${collapsed ? 'py-4' : 'py-2'}`}>
+          {!collapsed && (
+            <Image
+              className="h-25 w-auto"
+              src="/logo.png"
+              alt="Logo"
+              width={160}
+              height={70}
+              priority
+            />
+          )}
+          <button
+            onClick={onToggleCollapse}
+            className="text-blue-950 hover:text-blue-700 focus:outline-none"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            )}
+          </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4">
+        <nav className="flex-1 overflow-y-auto px-2 py-4">
           <div className="space-y-1">
             {navigation.map((item) => (
               <div key={item.name}>
@@ -145,21 +181,23 @@ export default function Sidebar() {
                         <item.icon
                           className={classNames(
                             isActive(item.href) ? 'text-blue-950' : 'text-white group-hover:text-blue-950',
-                            'mr-3 h-5 w-5 flex-shrink-0'
+                            'h-5 w-5 flex-shrink-0'
                           )}
                           aria-hidden="true"
                         />
-                        {item.name}
+                        {!collapsed && <span className="ml-3">{item.name}</span>}
                       </div>
-                      <ChevronDownIcon
-                        className={classNames(
-                          'h-4 w-4 transition-transform duration-200',
-                          openMenus.includes(item.name) ? 'rotate-180 transform' : '',
-                          isActive(item.href) ? 'text-blue-950' : 'text-white group-hover:text-blue-950'
-                        )}
-                      />
+                      {!collapsed && (
+                        <ChevronDownIcon
+                          className={classNames(
+                            'h-4 w-4 transition-transform duration-200',
+                            openMenus.includes(item.name) ? 'rotate-180 transform' : '',
+                            isActive(item.href) ? 'text-blue-950' : 'text-white group-hover:text-blue-950'
+                          )}
+                        />
+                      )}
                     </button>
-                    {openMenus.includes(item.name) && (
+                    {!collapsed && openMenus.includes(item.name) && (
                       <div className="mt-1 space-y-1 pl-11">
                         {item.children.map((child) => (
                           <Link
@@ -191,22 +229,29 @@ export default function Sidebar() {
                     <item.icon
                       className={classNames(
                         isActive(item.href) ? 'text-blue-950' : 'text-white group-hover:text-blue-950',
-                        'mr-3 h-5 w-5 flex-shrink-0'
+                        'h-5 w-5 flex-shrink-0'
                       )}
                       aria-hidden="true"
                     />
-                    {item.name}
+                    {!collapsed && <span className="ml-3">{item.name}</span>}
                   </Link>
                 )}
               </div>
             ))}
           </div>
-          <div className="mt-4 px-3">
+          <div className={`mt-4 px-3 ${collapsed ? 'px-1' : ''}`}>
             <button
               onClick={handleLogout}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-bold py-2 px-4 rounded transition-colors"
+              className={`w-full bg-yellow-400 hover:bg-yellow-500 text-blue-950 font-bold py-2 px-4 rounded transition-colors ${collapsed ? 'p-2' : ''}`}
+              title={collapsed ? "Logout" : ""}
             >
-              Logout
+              {collapsed ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              ) : (
+                "Logout"
+              )}
             </button>
           </div>
         </nav>

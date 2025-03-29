@@ -21,10 +21,26 @@ interface Payment {
 }
 
 export default function PaymentSummaryPage() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [payments, setPayments] = useState<Record<string, Payment[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Handle sidebar collapse state
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    } else if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  // Sync sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,10 +110,10 @@ export default function PaymentSummaryPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <div className="w-64 bg-white shadow">
-          <Navbar />
+        <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow`}>
+          <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
         </div>
-        <div className="flex-1 p-8">
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 flex items-center justify-center`}>
           <p className="text-gray-700">Loading payment summary...</p>
         </div>
       </div>
@@ -107,10 +123,10 @@ export default function PaymentSummaryPage() {
   if (error) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <div className="w-64 bg-white shadow">
-          <Navbar />
+        <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow`}>
+          <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
         </div>
-        <div className="flex-1 p-8">
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8`}>
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
             {error}
           </div>
@@ -122,12 +138,12 @@ export default function PaymentSummaryPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow">
-        <Navbar />
+      <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow`}>
+        <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8`}>
         <h2 className="text-3xl font-semibold mb-6 text-blue-950">Payment Summary</h2>
 
         {loans.length === 0 ? (

@@ -21,6 +21,7 @@ interface Loan {
 }
 
 export default function PaymentUploadPage() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [amount, setAmount] = useState<number>(0);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,6 +29,21 @@ export default function PaymentUploadPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [selectedLoanId, setSelectedLoanId] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
+
+  // Handle sidebar collapse state
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    } else if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  // Sync sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   // Fetch user and their loans
   useEffect(() => {
@@ -191,12 +207,12 @@ export default function PaymentUploadPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow">
-        <Navbar />
+      <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'} bg-white shadow`}>
+        <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8`}>
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
           <h2 className="text-2xl font-semibold mb-6 text-blue-950">Upload Proof of Payment</h2>
 
@@ -247,7 +263,12 @@ export default function PaymentUploadPage() {
             />
 
             {/* File Upload */}
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="w-full p-3 border border-gray-300 rounded-md" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <input 
+              type="file" 
+              accept=".pdf,.jpg,.jpeg,.png" 
+              className="w-full p-3 border border-gray-300 rounded-md" 
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)} 
+            />
 
             {/* Submit Button */}
             <button

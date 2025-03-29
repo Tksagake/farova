@@ -21,10 +21,26 @@ interface Loan {
 }
 
 const LoansPage = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+
+  // Handle sidebar collapse state
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    } else if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  // Sync sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     const fetchLoans = async () => {
@@ -65,10 +81,10 @@ const LoansPage = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-white">
-        <div className="w-64">
-          <Navbar />
+        <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+          <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
         </div>
-        <div className="flex-1 flex items-center justify-center">
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} flex items-center justify-center`}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-700 mb-4"></div>
             <h2 className="text-xl font-semibold text-blue-950">Loading Loans...</h2>
@@ -81,10 +97,10 @@ const LoansPage = () => {
   if (error) {
     return (
       <div className="flex min-h-screen bg-white">
-        <div className="w-64">
-          <Navbar />
+        <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+          <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
         </div>
-        <div className="flex-1 p-8">
+        <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8`}>
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
             <strong className="font-bold">Error!</strong>
             <span className="block sm:inline"> {error}</span>
@@ -97,12 +113,12 @@ const LoansPage = () => {
   return (
     <div className="flex min-h-screen bg-white">
       {/* Sidebar */}
-      <div className="w-64">
-        <Navbar />
+      <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <Navbar collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 bg-white rounded-lg shadow-lg">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 bg-white rounded-lg shadow-lg`}>
         <h2 className="text-2xl font-semibold mb-6 text-blue-950">Your Loans</h2>
 
         {loans.length === 0 ? (

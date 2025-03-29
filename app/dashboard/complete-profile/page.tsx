@@ -25,6 +25,7 @@ type FormState = {
 
 export default function CompleteProfile() {
   const router = useRouter();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormState>({
     full_name: "",
@@ -55,6 +56,21 @@ export default function CompleteProfile() {
     id: useRef<HTMLInputElement>(null),
     kra: useRef<HTMLInputElement>(null),
   };
+
+  // Handle sidebar collapse state
+  useEffect(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState !== null) {
+      setSidebarCollapsed(savedState === 'true');
+    } else if (window.innerWidth < 768) {
+      setSidebarCollapsed(true);
+    }
+  }, []);
+
+  // Sync sidebar state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', String(sidebarCollapsed));
+  }, [sidebarCollapsed]);
 
   // Fetch user data on page load
   useEffect(() => {
@@ -105,8 +121,8 @@ export default function CompleteProfile() {
 
   const uploadFile = async (file: File, path: string) => {
     const { data, error } = await supabase.storage
-      .from("userdata") // Use the correct bucket name
-      .upload(path, file, { upsert: true }); // Allows overwriting if a file already exists
+      .from("userdata")
+      .upload(path, file, { upsert: true });
 
     if (error) {
       console.error("Upload Error:", error);
@@ -186,14 +202,17 @@ export default function CompleteProfile() {
 
   // Main content
   return (
-    <div className="flex">
+    <div className="min-h-screen flex">
       {/* Sidebar */}
-      <div className="w-64">
-        <Navbar />
+      <div className={`fixed left-0 top-0 h-full transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <Navbar 
+          collapsed={sidebarCollapsed} 
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} 
+        />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 bg-white rounded-lg shadow-md text-sm">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-4 bg-white rounded-lg shadow-md text-sm`}>
         <h2 className="text-2xl font-bold mb-4 text-blue-950">Complete Your Profile</h2>
 
         {error && <p className="text-red-500 mb-2">{error}</p>}
@@ -213,7 +232,7 @@ export default function CompleteProfile() {
                   value={form[field as keyof FormState]}
                   onChange={handleChange}
                   className="w-full max-w-md p-1 border rounded-md"
-                  disabled={field === "full_name" || field === "email"} // Disable only name and email
+                  disabled={field === "full_name" || field === "email"}
                 />
               </div>
             ))}

@@ -37,6 +37,7 @@ const LoansPage = () => {
   const [notes, setNotes] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [modalStatus, setModalStatus] = useState<string>(''); // New state for modal status
 
   useEffect(() => {
     const fetchLoans = async () => {
@@ -93,11 +94,13 @@ const LoansPage = () => {
   const openModal = (loan: Loan) => {
     setSelectedLoan(loan);
     setNotes(loan.notes || '');
+    setModalStatus(loan.status); // Set the modal status
   };
 
   const closeModal = () => {
     setSelectedLoan(null);
     setNotes('');
+    setModalStatus(''); // Reset the modal status
   };
 
   const updateLoanStatus = async (loanId: string, newStatus: string) => {
@@ -105,7 +108,7 @@ const LoansPage = () => {
     const { error } = await supabase
       .from('loans')
       .update({ status: newStatus, notes })
-      .eq('id', loanId,);
+      .eq('id', loanId);
 
     if (error) {
       alert('Failed to update loan status');
@@ -122,7 +125,7 @@ const LoansPage = () => {
       if (newStatus === 'disbursed') {
         const memberDetails = memberDetailsMap.get(selectedLoan?.member_id || '');
         if (memberDetails) {
-          await sendEmail(memberDetails.email, 'disbursement');
+          await sendEmail(memberDetails.email, 'disbursement', loanId);
           console.log(`Email sent to ${memberDetails.email} for loan disbursement`);
         }
       }
@@ -148,7 +151,7 @@ const LoansPage = () => {
     }
   };
 
-  const sendEmail = async (to: string, type: string, loanId?: string, amount?: any) => {
+  const sendEmail = async (to: string, type: string, loanId?: string) => {
     try {
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -161,15 +164,15 @@ const LoansPage = () => {
           loanId: loanId,
         }),
       });
-  
+
       const data = await response.json();
       console.log('Response Status:', response.status);
       console.log('Response Data:', data);
-  
+
       if (!response.ok) {
         throw new Error(`Failed to send email: ${data.error || response.statusText}`);
       }
-  
+
       if (data.success) {
         console.log(`Email sent to ${to}`);
       } else {
@@ -180,7 +183,7 @@ const LoansPage = () => {
       throw error;
     }
   };
-  
+
   if (loading) {
     return (
       <div className="flex min-h-screen bg-white">
@@ -303,13 +306,14 @@ const LoansPage = () => {
               <h3 className="text-lg font-semibold mb-4 text-blue-950 mt-6">Update Status</h3>
               <select
                 className="mb-4 p-2 border rounded w-full"
-                value={selectedLoan.status}
+                value={modalStatus}
                 onChange={(e) => {
                   const newStatus = e.target.value;
                   console.log('Selected status:', newStatus); // Debugging log
-                  setSelectedLoan({ ...selectedLoan, status: newStatus });
+                  setModalStatus(newStatus);
                 }}
               >
+                <option value="pending">Pending</option>
                 <option value="disbursed">Disbursed</option>
                 <option value="partially_repaid">Partially Repaid</option>
                 <option value="fully_repaid">Fully Repaid</option>
@@ -323,7 +327,7 @@ const LoansPage = () => {
               ></textarea>
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => updateLoanStatus(selectedLoan.id, selectedLoan.status)}
+                  onClick={() => updateLoanStatus(selectedLoan.id, modalStatus)}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 >
                   Save

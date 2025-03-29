@@ -5,6 +5,8 @@ export async function POST(req: NextRequest) {
   try {
     const { email, type, loanId, approved, amount, subject, message } = await req.json();
 
+    console.log('Received email type:', type); // Log the received email type
+
     switch (type) {
       case "loan-application":
         await sendLoanApplicationEmail(email, loanId);
@@ -22,6 +24,7 @@ export async function POST(req: NextRequest) {
         await sendCustomEmail(email, subject, message);
         break;
       default:
+        console.error('Invalid email type received:', type);
         throw new Error("Invalid email type");
     }
 

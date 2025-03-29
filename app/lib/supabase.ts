@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SNEXT_PUBLIC_SUPABASE_ANON_KEY!; 
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!; // Fixed the typo
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

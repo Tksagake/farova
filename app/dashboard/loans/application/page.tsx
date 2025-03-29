@@ -1,12 +1,10 @@
 "use client";
 
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { calculateMonthlyInstallment } from '../../../utils/loanCalculations';
 import Navbar from '../../../components/Navbar';
 import { useRouter } from 'next/navigation';
-
 
 interface Profile {
   occupation: string;
@@ -30,13 +28,11 @@ interface Profile {
   kra_image?: string;
 }
 
-
 interface Guarantor {
   id: string;
   full_name: string;
   email: string;
 }
-
 
 interface LoanType {
   type: string;
@@ -45,13 +41,11 @@ interface LoanType {
   max_repayment_period: number;
 }
 
-
 const loanTypes: LoanType[] = [
   { type: 'Personal', interest_rate: 10, min_repayment_period: 1, max_repayment_period: 24 },
   { type: 'Business', interest_rate: 12, min_repayment_period: 1, max_repayment_period: 60 },
   { type: 'Education', interest_rate: 8, min_repayment_period: 1, max_repayment_period: 48 },
 ];
-
 
 const requiredProfileFields: (keyof Profile)[] = [
   'full_name', 'phone_number', 'email', 'national_id',
@@ -59,7 +53,6 @@ const requiredProfileFields: (keyof Profile)[] = [
   'zip_code', 'country', 'marital_status', 'religion',
   'passport_image', 'id_image', 'kra_image'
 ];
-
 
 const LoanApplicationForm = () => {
   const router = useRouter();
@@ -72,7 +65,6 @@ const LoanApplicationForm = () => {
     guarantor_id: '',
   });
 
-
   const [monthlyInstallment, setMonthlyInstallment] = useState(0);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [guarantors, setGuarantors] = useState<Guarantor[]>([]);
@@ -80,17 +72,14 @@ const LoanApplicationForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [profileComplete, setProfileComplete] = useState(false);
 
-
   useEffect(() => {
     const fetchProfileAndGuarantors = async () => {
       setLoading(true);
       setError(null);
 
-
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("User not found");
-
 
         // Fetch complete profile data
         const { data: profileData, error: profileError } = await supabase
@@ -99,27 +88,21 @@ const LoanApplicationForm = () => {
           .eq("user_id", user.id)
           .single();
 
-
         if (profileError) throw profileError;
         if (!profileData) throw new Error("Profile not found");
-
 
         // Check profile completion
         const incompleteFields = requiredProfileFields.filter(
           field => !profileData[field]
         );
-       
+
         if (incompleteFields.length > 0) {
           throw new Error(
             `Please complete your profile first`
-           
           );
-         
         }
 
-
         setProfileComplete(true);
-
 
         // Fetch guarantors (only approved members)
         const { data: guarantorsData, error: guarantorsError } = await supabase
@@ -128,9 +111,7 @@ const LoanApplicationForm = () => {
           .neq("user_id", user.id)
           .eq("status", "approved");
 
-
         if (guarantorsError) throw guarantorsError;
-
 
         // Fetch loans and calculate balance from repayments
         const { data: loansData, error: loansError } = await supabase
@@ -139,9 +120,7 @@ const LoanApplicationForm = () => {
           .eq("member_id", user.id)
           .neq("status", "fully_repaid");
 
-
         if (loansError) throw loansError;
-
 
         // Fetch all approved repayments for these loans
         const { data: repaymentsData, error: repaymentsError } = await supabase
@@ -150,9 +129,7 @@ const LoanApplicationForm = () => {
           .in("loan_id", loansData?.map(loan => loan.id) || [])
           .eq("status", "approved");
 
-
         if (repaymentsError) throw repaymentsError;
-
 
         // Calculate total paid per loan
         const loanPayments = repaymentsData?.reduce((acc, payment) => {
@@ -160,13 +137,11 @@ const LoanApplicationForm = () => {
           return acc;
         }, {} as Record<string, number>) || {};
 
-
         // Calculate existing loan balance
         const existingLoanBalance = loansData?.reduce((total, loan) => {
           const paid = loanPayments[loan.id] || 0;
           return total + (loan.amount_requested - paid);
         }, 0) || 0;
-
 
         setProfile(profileData);
         setGuarantors(guarantorsData || []);
@@ -179,15 +154,12 @@ const LoanApplicationForm = () => {
       }
     };
 
-
     fetchProfileAndGuarantors();
   }, []);
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-
 
     if (name === 'amount_requested' || name === 'repayment_period' || name === 'loan_type') {
       const loanType = loanTypes.find(lt => lt.type === form.loan_type);
@@ -198,15 +170,13 @@ const LoanApplicationForm = () => {
     }
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-   
+
     if (!profile || profile.status !== "approved") {
       alert("Your profile is not approved yet. Please wait for admin approval.");
       return;
     }
-
 
     if (!profileComplete) {
       alert("Please complete your profile before applying for a loan.");
@@ -214,14 +184,11 @@ const LoanApplicationForm = () => {
       return;
     }
 
-
     try {
       const loanType = loanTypes.find(lt => lt.type === form.loan_type);
       if (!loanType) throw new Error("Invalid loan type selected");
 
-
       const totalDue = monthlyInstallment * form.repayment_period;
-
 
       // Create the loan
       const { data: loanData, error: loanError } = await supabase
@@ -240,9 +207,7 @@ const LoanApplicationForm = () => {
         }])
         .select();
 
-
       if (loanError) throw loanError;
-
 
       // Add guarantor if selected
       if (form.guarantor_id) {
@@ -254,9 +219,7 @@ const LoanApplicationForm = () => {
             status: 'pending'
           }]);
 
-
         if (guarantorError) throw guarantorError;
-
 
         // Notify guarantor
         const guarantor = guarantors.find(g => g.id === form.guarantor_id);
@@ -269,6 +232,12 @@ const LoanApplicationForm = () => {
         }
       }
 
+      // Send loan application email to the applicant
+      await sendEmail(
+        profile.email,
+        'loan-application',
+        loanData[0].id
+      );
 
       alert('Loan application submitted successfully!');
       router.push('/dashboard/loans');
@@ -278,12 +247,40 @@ const LoanApplicationForm = () => {
     }
   };
 
-
-  const sendEmail = async (to: string, subject: string, body: string) => {
-    // Implement email sending logic here
-    console.log(`Sending email to ${to} with subject "${subject}"`);
+  const sendEmail = async (to: string, type: string, loanId?: string) => {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: to,
+          type: type,
+          loanId: loanId,
+        }),
+      });
+  
+      // Check if the response status is OK (status code 200-299)
+      if (!response.ok) {
+        throw new Error(`Failed to send email: ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+  
+      // Ensure the response indicates success
+      if (data.success) {
+        console.log(`Email sent to ${to}`);
+      } else {
+        throw new Error(data.error || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      // Optionally, rethrow the error if you want to handle it further up the call stack
+      throw error;
+    }
   };
-
+  
 
   if (loading) {
     return (
@@ -300,7 +297,6 @@ const LoanApplicationForm = () => {
       </div>
     );
   }
-
 
   if (error) {
     return (
@@ -326,9 +322,7 @@ const LoanApplicationForm = () => {
     );
   }
 
-
   const selectedLoanType = loanTypes.find(lt => lt.type === form.loan_type);
-
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -337,11 +331,9 @@ const LoanApplicationForm = () => {
         <Navbar />
       </div>
 
-
       {/* Main Content */}
       <div className="flex-1 p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-2xl font-semibold mb-6 text-blue-950">Apply for a Loan</h2>
-
 
         {!profileComplete && (
           <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg">
@@ -349,13 +341,11 @@ const LoanApplicationForm = () => {
           </div>
         )}
 
-
         {profile && profile.status !== "approved" && (
           <div className="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded-lg">
             <strong>Notice:</strong> Your profile is not approved yet. Please wait for admin approval to apply for a loan.
           </div>
         )}
-
 
         {profile && profile.status === "approved" && (
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -372,7 +362,6 @@ const LoanApplicationForm = () => {
               <p><strong>Employment:</strong> {profile.occupation || 'N/A'}</p>
             </div>
 
-
             {/* Loan Amount */}
             <div>
               <label className="block text-sm font-medium mb-2 text-blue-950">Loan Amount (KES)</label>
@@ -387,7 +376,6 @@ const LoanApplicationForm = () => {
               />
             </div>
 
-
             {/* Loan Purpose */}
             <div>
               <label className="block text-sm font-medium mb-2 text-blue-950">Purpose</label>
@@ -401,7 +389,6 @@ const LoanApplicationForm = () => {
                 placeholder="E.g., Business, School Fees"
               />
             </div>
-
 
             {/* Loan Type */}
             <div>
@@ -420,14 +407,12 @@ const LoanApplicationForm = () => {
               </select>
             </div>
 
-
             {/* Display Interest Rate */}
             <div className="bg-gray-100 p-4 rounded-lg">
               <p className="text-lg font-medium text-blue-950">
                 Interest Rate: {selectedLoanType?.interest_rate}%
               </p>
             </div>
-
 
             {/* Repayment Period */}
             <div>
@@ -444,7 +429,6 @@ const LoanApplicationForm = () => {
               />
             </div>
 
-
             {/* Existing Loan Balance */}
             <div>
               <label className="block text-sm font-medium mb-2 text-blue-950">Existing Loan Balance (KES)</label>
@@ -458,7 +442,6 @@ const LoanApplicationForm = () => {
                 disabled
               />
             </div>
-
 
             {/* Select Guarantor */}
             <div>
@@ -479,7 +462,6 @@ const LoanApplicationForm = () => {
               </select>
             </div>
 
-
             {/* Monthly Installment (Dynamic Calculation) */}
             <div className="bg-gray-100 p-4 rounded-lg">
               <p className="text-lg font-medium text-blue-950">
@@ -487,7 +469,6 @@ const LoanApplicationForm = () => {
                 <span className="text-blue-600">{monthlyInstallment.toFixed(2)}</span>
               </p>
             </div>
-
 
             {/* Submit Button */}
             <button
@@ -498,13 +479,9 @@ const LoanApplicationForm = () => {
             </button>
           </form>
         )}
-
-
       </div>
     </div>
   );
 };
 
-
 export default LoanApplicationForm;
-

@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import { Excel } from "exceljs";
+import { Workbook } from 'exceljs';
 
 interface Loan {
   id: string;
@@ -8,51 +8,135 @@ interface Loan {
   repayment_period: number;
   total_due: number;
   amount_paid: number;
-  balance_due: number;
+  balance_due?: number; // Optional, will be calculated
+}
+
+interface Payment {
+  loan_id: string;
+  amount_paid: number | null;
+  created_at: string;
 }
 
 interface StatementProps {
   loans: Loan[];
+  payments: Record<string, Payment[]>;
   memberName: string;
+  memberEmail: string;
+  memberPhone: string;
 }
 
-export const StatementGenerator = ({ loans, memberName }: StatementProps) => {
+export const StatementGenerator = ({ loans, payments, memberName, memberEmail, memberPhone }: StatementProps) => {
+  const calculateTotalPaid = (loanId: string): number => {
+    return (payments[loanId] || []).reduce((total, payment) => total + (payment.amount_paid ?? 0), 0);
+  };
+
+  const calculateBalanceDue = (loan: Loan): number => {
+    const totalPaid = calculateTotalPaid(loan.id);
+    return loan.total_due - totalPaid;
+  };
+
   const generatePDFStatement = () => {
     const doc = new jsPDF();
+    let pageNumber = 1;
 
-    // Set document properties
-    doc.setProperties({
-      title: `Loan Statement - ${memberName}`,
-      subject: `Loan Statement for ${memberName}`,
-      author: 'Farova Welfare',
-      keywords: 'statement, loan',
-      creator: 'YourApp'
-    });
+    const addFooter = (page: number) => {
+      doc.setFontSize(10);
+      doc.setTextColor(100); // Gray color
+      doc.text('Farova Welfare - Here for you!', 20, doc.internal.pageSize.height - 20);
+      doc.text(`Page ${page}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 20);
+    };
 
-    // Add content to the PDF
+    // Add logo with controlled dimensions
+    const logoUrl = '/logo.png'; // Update with actual path
+    doc.addImage(logoUrl, 'PNG', 20, 10, 75, 55); // Width: 80, Height: 60
+
+    // Letterhead with color scheme
+    doc.setFontSize(14);
+    doc.setTextColor(17, 36, 68); // Navy Blue
+    doc.text('Farova Welfare', 90, 30);
+    doc.setTextColor(100); // Gray
+    doc.setFontSize(10);
+    doc.text('Address: 123 Main St, Nairobi, Kenya', 90, 38);
+    doc.text('Email: info@farova.com', 90, 46);
+    doc.text('Phone: +254 123 456 789', 90, 54);
+
+    // Document title
     doc.setFontSize(20);
-    doc.text('Loan Statement', 20, 30);
+    doc.setTextColor(17, 36, 68); // Navy Blue
+    doc.text('Loan Statement', 20, 80);
 
+    // Member details
     doc.setFontSize(12);
-    doc.text(`Member Name: ${memberName}`, 20, 40);
+    doc.setTextColor(0); // Black
+    doc.text(`Member Name: ${memberName}`, 20, 90);
+    doc.line(20, 115, 190, 115); // Line under member details
 
-    let yOffset = 50;
+    let yOffset = 120;
     loans.forEach((loan, index) => {
-      doc.text(`Loan ${index + 1}:`, 20, yOffset);
-      doc.text(`Purpose: ${loan.purpose}`, 20, yOffset + 10);
-      doc.text(`Amount Requested: KES ${loan.amount_requested.toFixed(2)}`, 20, yOffset + 20);
-      doc.text(`Total Due: KES ${loan.total_due.toFixed(2)}`, 20, yOffset + 30);
-      doc.text(`Amount Paid: KES ${loan.amount_paid.toFixed(2)}`, 20, yOffset + 40);
-      doc.text(`Balance Due: KES ${loan.balance_due.toFixed(2)}`, 20, yOffset + 50);
-      yOffset += 60;
+      const totalPaid = calculateTotalPaid(loan.id);
+      const balanceDue = calculateBalanceDue(loan);
+
+      // Check if adding this loan will exceed the page height
+      if (yOffset + 100 > doc.internal.pageSize.height - 40) {
+        addFooter(pageNumber);
+        doc.addPage();
+        pageNumber += 1;
+        yOffset = 20;
+        addFooter(pageNumber);
+      }
+
+      // Loan table
+      doc.setTextColor(17, 36, 68); // Navy Blue text
+      doc.text(`Loan ${index + 1}: ${loan.purpose}`, 20, yOffset);
+      yOffset += 10;
+
+      // Table header
+      doc.setTextColor(0); // Black text
+      doc.setFontSize(10);
+      doc.text('Description', 20, yOffset);
+      doc.text('Amount (KES)', 120, yOffset);
+      doc.line(20, yOffset + 2, 190, yOffset + 2); // Line under header
+
+      yOffset += 10;
+      doc.text('Opening Balance', 20, yOffset);
+      doc.text((loan.amount_requested || 0).toFixed(2), 120, yOffset);
+      doc.line(20, yOffset + 2, 190, yOffset + 2); // Line under opening balance
+
+      (payments[loan.id] || []).forEach((payment, pIndex) => {
+        yOffset += 10;
+        doc.text(`Payment ${pIndex + 1}`, 20, yOffset);
+        doc.text((payment.amount_paid || 0).toFixed(2), 120, yOffset);
+        doc.line(20, yOffset + 2, 190, yOffset + 2); // Line under each payment
+      });
+
+      yOffset += 10;
+      doc.setTextColor(17, 36, 68); // Navy Blue text
+      doc.text('Total Paid', 20, yOffset);
+      doc.text(totalPaid.toFixed(2), 120, yOffset);
+      doc.line(20, yOffset + 2, 190, yOffset + 2); // Line under total paid
+
+      yOffset += 10;
+      doc.text('Balance Due', 20, yOffset);
+      doc.text(balanceDue.toFixed(2), 120, yOffset);
+      doc.line(20, yOffset + 2, 190, yOffset + 2); // Line under balance due
+
+      yOffset += 20;
     });
+
+    // Add footer to the last page
+    addFooter(pageNumber);
+
+    // Disclaimer
+    doc.setFontSize(10);
+    doc.setTextColor(100); // Gray
+    doc.text('Disclaimer: This statement is computer-generated and does not require a signature.', 20, doc.internal.pageSize.height - 30);
 
     // Save the PDF
     doc.save(`statement_${memberName}.pdf`);
   };
 
-  const generateExcelStatement = () => {
-    const workbook = new Excel.Workbook();
+  const generateExcelStatement = async () => {
+    const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Loan Statement');
 
     // Add headers
@@ -65,17 +149,46 @@ export const StatementGenerator = ({ loans, memberName }: StatementProps) => {
       { header: 'Balance Due', key: 'balance_due', width: 15 },
     ];
 
+    // Letterhead
+    worksheet.addRow(['Farova Welfare']);
+    worksheet.addRow(['Address: 123 Main St, Nairobi, Kenya']);
+    worksheet.addRow(['Email: info@farova.com']);
+    worksheet.addRow(['Phone: +254 123 456 789']);
+    worksheet.addRow([]); // Empty row for spacing
+
+    // Member details
+    worksheet.addRow(['Member Name:', memberName]);
+    worksheet.addRow(['Member Email:', memberEmail]);
+    worksheet.addRow(['Member Phone:', memberPhone]);
+    worksheet.addRow([]); // Empty row for spacing
+
     // Add data
     loans.forEach(loan => {
+      const totalPaid = calculateTotalPaid(loan.id);
+      const balanceDue = calculateBalanceDue(loan);
       worksheet.addRow({
         id: loan.id,
         purpose: loan.purpose,
-        amount_requested: loan.amount_requested.toFixed(2),
-        total_due: loan.total_due.toFixed(2),
-        amount_paid: loan.amount_paid.toFixed(2),
-        balance_due: loan.balance_due.toFixed(2),
+        amount_requested: (loan.amount_requested || 0).toFixed(2),
+        total_due: (loan.total_due || 0).toFixed(2),
+        amount_paid: totalPaid.toFixed(2),
+        balance_due: balanceDue.toFixed(2),
       });
+
+      // Add payments as separate rows
+      (payments[loan.id] || []).forEach((payment, index) => {
+        worksheet.addRow({
+          purpose: `Payment ${index + 1}`,
+          amount_paid: (payment.amount_paid || 0).toFixed(2),
+        });
+      });
+
+      worksheet.addRow([]); // Empty row for spacing between loans
     });
+
+    // Footer and Disclaimer
+    worksheet.addRow([]); // Empty row for spacing
+    worksheet.addRow(['Disclaimer: This statement is computer-generated and does not require a signature.']);
 
     // Generate Excel file
     workbook.xlsx.writeBuffer().then(data => {

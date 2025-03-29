@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/app/components/Navbar";
 import { PencilIcon } from "@heroicons/react/24/outline";
+import { StatementGenerator } from "@/app/components/StatementGenerator";
 
 interface Profile {
   full_name: string;
@@ -332,6 +333,8 @@ export default function MemberProfile() {
           {/* Loans Section */}
           <section className="bg-gray-50 p-6 rounded-lg col-span-2">
             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Loans</h3>
+            <StatementGenerator loans={loans} memberName={profile.full_name} memberEmail={""} memberPhone={""} payments={payments} />
+            
             {loans.length === 0 ? (
               <p className="text-gray-600">No active loans found.</p>
             ) : (

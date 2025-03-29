@@ -186,26 +186,26 @@ const LoanApplicationForm = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!profile || profile.status !== "approved") {
       alert("Your profile is not approved yet. Please wait for admin approval.");
       return;
     }
-
+  
     if (!profileComplete) {
       alert("Please complete your profile before applying for a loan.");
       router.push('/dashboard/profile');
       return;
     }
-
+  
     try {
       const loanType = loanTypes.find(lt => lt.type === form.loan_type);
       if (!loanType) throw new Error("Invalid loan type selected");
-
+  
       const totalDue = monthlyInstallment * form.repayment_period;
-
+  
       // Create the loan
       const { data: loanData, error: loanError } = await supabase
         .from('loans')
@@ -222,9 +222,9 @@ const LoanApplicationForm = () => {
           status: 'pending'
         }])
         .select();
-
+  
       if (loanError) throw loanError;
-
+  
       // Add guarantor if selected
       if (form.guarantor_id) {
         const { error: guarantorError } = await supabase
@@ -234,35 +234,35 @@ const LoanApplicationForm = () => {
             guarantor_id: form.guarantor_id,
             status: 'pending'
           }]);
-
+  
         if (guarantorError) throw guarantorError;
-
+  
         // Notify guarantor
         const guarantor = guarantors.find(g => g.id === form.guarantor_id);
         if (guarantor) {
           await sendEmail(
             guarantor.email,
-            'Guarantor Request',
+            'custom', // Use 'custom' type for guarantor notification
             `You have been requested to guarantee a loan application by ${profile.full_name}.`
           );
         }
       }
-
+  
       // Send loan application email to the applicant
       await sendEmail(
         profile.email,
-        'loan-application',
+        'loan-application', // Ensure this matches the server-side expectation
         loanData[0].id
       );
-
+  
       alert('Loan application submitted successfully!');
       router.push('/dashboard/loans');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error submitting application:', err);
       alert(`Failed to submit application: ${err.message}`);
     }
   };
-
+  
   const sendEmail = async (to: string, type: string, loanId?: string) => {
     try {
       const response = await fetch('/api/send-email', {

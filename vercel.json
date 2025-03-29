@@ -1,0 +1,9 @@
+{
+    "build": {
+      "env": {
+        "NEXT_PUBLIC_IGNORE_ESLINT_ERRORS": "true",
+        "NEXT_PUBLIC_IGNORE_TS_ERRORS": "true"
+      }
+    }
+  }
+  

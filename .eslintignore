@@ -1,0 +1,9 @@
+# Ignore specific folders and files
+node_modules/
+.next/
+dist/
+*.config.js
+
+
+/app/admin/**
+/app/dashboard

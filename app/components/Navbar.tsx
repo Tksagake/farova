@@ -111,14 +111,14 @@ export default function Navbar({ collapsed, onToggleCollapse }: NavbarProps) {
         { name: 'Edit Profile', href: '/dashboard/complete-profile' },
       ],
     },
-    {
-      name: 'Reports',
-      href: '/dashboard/reports',
-      icon: ChartBarIcon,
-      children: [
-        { name: 'Payment Statement', href: '/dashboard/reports/statement' },
-      ],
-    },
+   // {
+     // name: 'Reports',
+      //href: '/dashboard/reports',
+      //icon: ChartBarIcon,
+      //children: [
+        //{ name: 'Payment Statement', href: '/dashboard/reports/statement' },
+      //],
+    //},
   ];
 
   if (!user) {

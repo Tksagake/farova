@@ -88,7 +88,7 @@ export default function MemberDashboard() {
     {
       name: "Request Loan",
       description: "Apply for a loan once your profile is approved",
-      href: "/dashboard/loan-request",
+      href: "/dashboard/loan/application",
       icon: BanknotesIcon,
       color: "bg-blue-100 text-blue-700",
     },
@@ -113,6 +113,14 @@ export default function MemberDashboard() {
       icon: BellIcon,
       color: "bg-blue-100 text-blue-700",
     },
+    {
+      name: "Payment History",
+      description: "Track your loan repayments",
+      href: "/dashboard/payments/history",
+      icon: BellIcon,
+      color: "bg-blue-100 text-blue-700",
+    },
+    
   ];
 
   if (loading) {

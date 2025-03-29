@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
   port: 587, // Use 465 for SSL, 587 for TLS
   secure: false, // true for port 465, false for 587
   auth: {
-    user: process.env.EMAIL_USER, 
+    user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
@@ -42,23 +42,30 @@ export const sendLoanApplicationEmail = async (to: string, loanId: string) => {
   });
 };
 
-// Loan Approval/Decline Email
-export const sendLoanApprovalEmail = async (to: string, approved: boolean) => {
+// Loan Approval Email
+export const sendLoanApprovalEmail = async (to: string, loanId: string) => {
   return sendEmail({
     to,
-    subject: approved
-      ? "✅ Loan Approved - Farova Welfare"
-      : "❌ Loan Declined - Farova Welfare",
-    html: emailTemplates.loanApproval(approved),
+    subject: "✅ Loan Approved - Farova Welfare",
+    html: emailTemplates.loanApproval(loanId),
+  });
+};
+
+// Loan Rejection Email
+export const sendLoanRejectionEmail = async (to: string, loanId: string) => {
+  return sendEmail({
+    to,
+    subject: "❌ Loan Declined - Farova Welfare",
+    html: emailTemplates.loanRejection(loanId),
   });
 };
 
 // Loan Disbursement Email
-export const sendDisbursementEmail = async (to: string, amount: number) => {
+export const sendDisbursementEmail = async (to: string) => {
   return sendEmail({
     to,
     subject: "💸 Loan Disbursed - Farova Welfare",
-    html: emailTemplates.disbursement(amount),
+    html: emailTemplates.disbursement(),
   });
 };
 

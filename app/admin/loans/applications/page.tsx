@@ -91,23 +91,35 @@ const AdminLoanPage = () => {
   };
 
   const updateLoanStatus = async (loanId: string, newStatus: string) => {
-    const { error } = await supabase
-      .from('loans')
-      .update({ status: newStatus })
-      .eq('id', loanId);
-
-    if (error) {
-      alert('Failed to update loan status');
-      console.error(error);
+    if (newStatus === 'rejected') {
+      await deleteLoan(loanId);
     } else {
+      const { error } = await supabase
+        .from('loans')
+        .update({ status: newStatus })
+        .eq('id', loanId);
+
+      if (error) {
+        alert('Failed to update loan status');
+        console.error(error);
+        return;
+      }
+
       setLoans((prevLoans) =>
         prevLoans.map((loan) =>
           loan.id === loanId ? { ...loan, status: newStatus } : loan
         ).filter((loan) => loan.status === 'pending') // Filter out non-pending loans
       );
       alert(`Loan marked as ${newStatus}`);
-      closeModal();
     }
+
+    // Send email notification
+    const memberDetails = memberDetailsMap.get(selectedLoan?.member_id || '');
+    if (memberDetails) {
+      await sendEmail(memberDetails.email, newStatus === 'approved' ? 'loan-approval' : 'loan-declined', loanId);
+    }
+
+    closeModal();
   };
 
   const deleteLoan = async (loanId: string) => {
@@ -119,12 +131,47 @@ const AdminLoanPage = () => {
     if (error) {
       alert('Failed to delete loan');
       console.error(error);
+      return false;
     } else {
       setLoans((prevLoans) => prevLoans.filter((loan) => loan.id !== loanId));
       alert('Loan deleted successfully');
-      closeModal();
+      return true;
     }
   };
+
+  const sendEmail = async (to: string, type: string, loanId?: string) => {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: to,
+          type: type,
+          loanId: loanId,
+        }),
+      });
+  
+      const data = await response.json();
+      console.log('Response Status:', response.status);
+      console.log('Response Data:', data);
+  
+      if (!response.ok) {
+        throw new Error(`Failed to send email: ${data.error || response.statusText}`);
+      }
+  
+      if (data.success) {
+        console.log(`Email sent to ${to}`);
+      } else {
+        throw new Error(data.error || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  };
+  
 
   if (loading) {
     return (
@@ -239,7 +286,7 @@ const AdminLoanPage = () => {
                   Approve
                 </button>
                 <button
-                  onClick={() => deleteLoan(selectedLoan.id)}
+                  onClick={() => updateLoanStatus(selectedLoan.id, 'rejected')}
                   className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 >
                   Reject

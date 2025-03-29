@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
         await sendLoanApprovalEmail(email, approved);
         break;
       case "disbursement":
-        await sendDisbursementEmail(email, amount);
+        await sendDisbursementEmail(email);
         break;
       case "payment-received":
         await sendPaymentReceivedEmail(email, amount);

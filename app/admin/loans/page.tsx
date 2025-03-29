@@ -101,10 +101,11 @@ const LoansPage = () => {
   };
 
   const updateLoanStatus = async (loanId: string, newStatus: string) => {
+    console.log('Updating loan status:', loanId, newStatus); // Debugging log
     const { error } = await supabase
       .from('loans')
       .update({ status: newStatus, notes })
-      .eq('id', loanId);
+      .eq('id', loanId,);
 
     if (error) {
       alert('Failed to update loan status');
@@ -116,6 +117,16 @@ const LoansPage = () => {
         )
       );
       alert(`Loan marked as ${newStatus}`);
+
+      // Send email notification for disbursement
+      if (newStatus === 'disbursed') {
+        const memberDetails = memberDetailsMap.get(selectedLoan?.member_id || '');
+        if (memberDetails) {
+          await sendEmail(memberDetails.email, 'disbursement');
+          console.log(`Email sent to ${memberDetails.email} for loan disbursement`);
+        }
+      }
+
       closeModal();
     }
   };
@@ -137,6 +148,39 @@ const LoansPage = () => {
     }
   };
 
+  const sendEmail = async (to: string, type: string, loanId?: string, amount?: any) => {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: to,
+          type: type,
+          loanId: loanId,
+        }),
+      });
+  
+      const data = await response.json();
+      console.log('Response Status:', response.status);
+      console.log('Response Data:', data);
+  
+      if (!response.ok) {
+        throw new Error(`Failed to send email: ${data.error || response.statusText}`);
+      }
+  
+      if (data.success) {
+        console.log(`Email sent to ${to}`);
+      } else {
+        throw new Error(data.error || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
+  };
+  
   if (loading) {
     return (
       <div className="flex min-h-screen bg-white">
@@ -260,7 +304,11 @@ const LoansPage = () => {
               <select
                 className="mb-4 p-2 border rounded w-full"
                 value={selectedLoan.status}
-                onChange={(e) => setSelectedLoan({ ...selectedLoan, status: e.target.value })}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  console.log('Selected status:', newStatus); // Debugging log
+                  setSelectedLoan({ ...selectedLoan, status: newStatus });
+                }}
               >
                 <option value="disbursed">Disbursed</option>
                 <option value="partially_repaid">Partially Repaid</option>

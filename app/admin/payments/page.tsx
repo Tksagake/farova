@@ -159,6 +159,31 @@ function PaymentCard({
       }
 
       console.log(`Successfully ${action}d payment:`, data[0]);
+      
+      // Send email notification
+      try {
+        const response = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: payment.email,
+            type: "payment-received",
+            amount: payment.amount_paid
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send email');
+        }
+
+        console.log('Email sent successfully');
+      } catch (emailError) {
+        console.error('Error sending email:', emailError);
+        // Don't fail the whole operation if email fails
+      }
+
       onUpdate(payment.id);
     } catch (err: any) {
       console.error(`Error ${action}ing payment:`, {

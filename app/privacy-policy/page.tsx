@@ -210,7 +210,7 @@ export default function PrivacyPolicy() {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-            <p className="text-gray-300">© 2025 Farova Welfare. All rights reserved.</p>
+            <p className="text-gray-300">© 2025 Farova Welfare. All rights reserved. Powered by Diversiworks Times Group</p>
           </div>
         </div>
       </footer>

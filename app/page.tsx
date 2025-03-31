@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Users, Shield, BookOpen } from 'lucide-react';
+import { get } from "http";
 
 export default function Home() {
   const router = useRouter();
@@ -31,6 +32,12 @@ export default function Home() {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  function getfullyear(): import("react").ReactNode {
+    const currentYear = new Date().getFullYear();
+    return getfullyear(
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -230,7 +237,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center">
-            <p className="text-gray-300">© 2025 Farova Welfare. All rights reserved.</p>
+            <p className="text-gray-300">© {getfullyear()} Farova Welfare. All rights reserved. Powered by DiversiWorks Times Group.</p>
           </div>
         </div>
       </footer>

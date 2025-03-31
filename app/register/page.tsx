@@ -9,10 +9,15 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [agree, setAgree] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!agree) {
+      return setError("You must agree to the Privacy Policy and Terms and Conditions.");
+    }
+
     // 1. First create the auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -25,9 +30,9 @@ export default function Register() {
         }
       }
     });
-  
+
     if (authError) return setError(authError.message);
-  
+
     // 2. Then directly create the profile record
     const { error: profileError } = await supabase
       .from('profiles')
@@ -38,9 +43,9 @@ export default function Register() {
         full_name: name,
         status: 'pending'
       });
-  
+
     if (profileError) return setError(profileError.message);
-  
+
     router.push("/login");
   };
 
@@ -64,6 +69,9 @@ export default function Register() {
               onChange={(e) => setName(e.target.value)}
               className="w-full p-3 rounded-lg border-none outline-none focus:ring-2 focus:ring-yellow-400 bg-white/20 text-white placeholder-gray-300"
             />
+          </div>
+
+          <div>
             <label className="text-yellow-400 text-sm mb-1 block">Email Address</label>
             <input
               type="email"
@@ -81,6 +89,19 @@ export default function Register() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 rounded-lg border-none outline-none focus:ring-2 focus:ring-yellow-400 bg-white/20 text-white placeholder-gray-300"
             />
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="agree"
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="mr-2"
+            />
+            <label htmlFor="agree" className="text-yellow-400 text-sm">
+              I agree to the <a href="/privacy-policy" className="underline hover:text-yellow-300">Privacy Policy</a> and <a href="/privacy-policy" className="underline hover:text-yellow-300">Terms and Conditions</a>.
+            </label>
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}

@@ -19,14 +19,21 @@ export default function Home() {
       name: "Jane Doe",
       role: "Member",
       content: "Farova Welfare has been a lifesaver for me. The support and resources they provide are unmatched.",
-      image: "https://via.placeholder.com/150"
+      image: "/logoh.png"
     },
     {
       name: "John Smith",
       role: "Member",
       content: "The career training programs have significantly boosted my skills and confidence.",
-      image: "https://via.placeholder.com/150"
+      image: "/logo.png"
+    },
+    {
+      name: "John Smith",
+      role: "Member",
+      content: "The career training programs have significantly boosted my skills and confidence.",
+      image: "/logo3.png"
     }
+
   ];
 
   const toggleMenu = () => {

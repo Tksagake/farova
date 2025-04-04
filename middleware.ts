@@ -30,6 +30,7 @@ export const config = {
   matcher: [
     "/dashboard(.*)",
     "/admin(.*)",
-    "/((?!api|_next/static|_next/image|favicon.ico).*)"
+    "/profile(.*)",
+    "/settings(.*)",
   ]
 };

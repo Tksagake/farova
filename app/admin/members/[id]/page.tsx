@@ -172,6 +172,24 @@ export default function MemberProfile() {
     return loan.amount_requested - totalPaid;
   };
 
+  // Export loan data to CSV
+  const exportLoansToCSV = () => {
+    const csvContent = loans.map((loan) => {
+      const totalPaid = calculateTotalPaid(loan.id);
+      const balance = calculateBalance(loan);
+      return `${loan.id},${loan.purpose},${loan.amount_requested},${totalPaid},${balance},${loan.status}`;
+    }).join("\n");
+
+    const blob = new Blob([`Loan ID,Purpose,Amount Requested,Total Paid,Balance,Status\n${csvContent}`], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${profile?.full_name}_loans.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen bg-white">
@@ -303,6 +321,19 @@ export default function MemberProfile() {
             {actionSuccess}
           </div>
         )}
+
+        {/* Export Buttons */}
+        <div className="flex justify-end gap-4 mb-6">
+          <button
+            onClick={exportLoansToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m-6-6h12" />
+            </svg>
+            Export to CSV
+          </button>
+        </div>
 
         {/* Profile Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-blue-950">

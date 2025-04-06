@@ -227,40 +227,24 @@ export default function MemberProfile() {
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-4 md:p-8 bg-white rounded-lg relative`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-64'} p-8 bg-white rounded-lg relative`}>
         {/* Profile Image (Top Right) */}
         {profile.passport_image && (
           <img
             src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/userdata/${profile.passport_image}`}
             alt="Profile Picture"
-            className="absolute top-8 right-8 w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-blue-950 object-cover"
+            className="absolute top-8 right-8 w-32 h-32 rounded-full border-4 border-blue-950 object-cover"
           />
         )}
 
-        {/* Sidebar Toggle Button for Mobile */}
-        <button
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="md:hidden absolute top-4 left-4 z-10 bg-blue-950 text-white p-2 rounded-full"
-        >
-          {sidebarCollapsed ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          )}
-        </button>
-
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-blue-950">
+          <h2 className="text-3xl font-bold text-blue-950">
             {profile.full_name}'s Profile
           </h2>
           <div className="relative">
             <button
               onClick={() => router.push(`/dashboard/complete-profile?id=${profile.user_id}`)}
-              className="absolute left-110 text-blue-950 hover:text-blue-700 md:p-2 p-4"
+              className="absolute left-110 text-blue-950 hover:text-blue-700"
             >
               <PencilIcon className="h-6 w-6" />
             </button>
@@ -277,7 +261,7 @@ export default function MemberProfile() {
         {/* Profile Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-blue-950">
           {/* Contact Information */}
-          <section className="bg-gray-50 p-4 md:p-6 rounded-lg">
+          <section className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Contact Information</h3>
             <div className="space-y-3">
               <p><strong>Full Name:</strong> {profile.full_name}</p>
@@ -291,7 +275,7 @@ export default function MemberProfile() {
           </section>
 
           {/* Personal Information */}
-          <section className="bg-gray-50 p-4 md:p-6 rounded-lg">
+          <section className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Personal Information</h3>
             <div className="space-y-3">
               <p><strong>National ID:</strong> {profile.national_id}</p>
@@ -304,7 +288,7 @@ export default function MemberProfile() {
           </section>
 
           {/* Employment Information */}
-          <section className="bg-gray-50 p-4 md:p-6 rounded-lg">
+          <section className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Employment Information</h3>
             <div className="space-y-3">
               <p><strong>Occupation:</strong> {profile.occupation}</p>
@@ -313,7 +297,7 @@ export default function MemberProfile() {
           </section>
 
           {/* Uploaded Documents */}
-          <section className="bg-gray-50 p-4 md:p-6 rounded-lg">
+          <section className="bg-gray-50 p-6 rounded-lg">
             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Uploaded Documents</h3>
             <div className="space-y-3">
               <p>
@@ -363,7 +347,7 @@ export default function MemberProfile() {
           </section>
 
           {/* Loans Section */}
-          <section className="bg-gray-50 p-4 md:p-6 rounded-lg col-span-2">
+          <section className="bg-gray-50 p-6 rounded-lg md:col-span-2">
             <h3 className="text-xl font-semibold mb-4 border-b pb-2">Loans</h3>
             <StatementGenerator loans={loans} memberName={profile.full_name} memberEmail={""} memberPhone={""} payments={payments} />
 

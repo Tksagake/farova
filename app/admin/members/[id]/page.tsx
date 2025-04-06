@@ -29,17 +29,41 @@ interface Profile {
   user_id: string;
 }
 
+interface Loan {
+  id: string;
+  amount_requested: number;
+  purpose: string;
+  repayment_period: number;
+  interest_rate: number;
+  repayment_method: string;
+  existing_loan_balance: number;
+  status: string;
+  monthly_installment: number;
+  total_due: number;
+  amount_paid: number;
+  balance_due: number;
+  due_date: string;
+}
+
+interface Payment {
+  loan_id: string;
+  amount_paid: number | null;
+  created_at: string;
+}
+
 export default function MemberProfile() {
   const router = useRouter();
   const params = useParams();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [payments, setPayments] = useState<Record<string, Payment[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndLoans = async () => {
       setLoading(true);
       setError(null);
 
@@ -53,25 +77,54 @@ export default function MemberProfile() {
           throw new Error("Invalid UUID format");
         }
 
-        const { data, error: supabaseError } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", params.id)
           .single();
 
-        if (supabaseError) throw supabaseError;
-        if (!data) throw new Error("Profile not found");
+        if (profileError) throw profileError;
+        if (!profileData) throw new Error("Profile not found");
 
-        setProfile(data);
+        setProfile(profileData);
+
+        // Fetch loans for the member
+        const { data: loansData, error: loansError } = await supabase
+          .from("loans")
+          .select("*")
+          .eq("member_id", params.id);
+
+        if (loansError) throw loansError;
+
+        // Fetch all approved payments related to these loans
+        const { data: allPayments, error: paymentError } = await supabase
+          .from("repayments")
+          .select("loan_id, amount_paid, created_at")
+          .in("loan_id", loansData?.map((loan) => loan.id) || [])
+          .eq("status", "approved");
+
+        if (paymentError) throw paymentError;
+
+        // Organize payments by loan_id
+        const paymentMap: Record<string, Payment[]> = {};
+        (allPayments || []).forEach((payment) => {
+          if (!paymentMap[payment.loan_id]) {
+            paymentMap[payment.loan_id] = [];
+          }
+          paymentMap[payment.loan_id].push(payment);
+        });
+
+        setLoans(loansData || []);
+        setPayments(paymentMap);
       } catch (err: any) {
-        console.error("Error fetching profile:", err.message);
+        console.error("Error fetching profile and loans:", err.message);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchProfileAndLoans();
   }, [params?.id, router]);
 
   const handleStatusUpdate = async (newStatus: "approved" | "rejected" | "inactive") => {
@@ -101,6 +154,22 @@ export default function MemberProfile() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // Helper function to safely format amounts
+  const formatAmount = (amount: number | null | undefined) => {
+    return amount?.toLocaleString() ?? "0";
+  };
+
+  // Calculate total paid dynamically
+  const calculateTotalPaid = (loanId: string) => {
+    return payments[loanId]?.reduce((total, payment) => total + (payment.amount_paid ?? 0), 0) ?? 0;
+  };
+
+  // Calculate balance dynamically
+  const calculateBalance = (loan: Loan) => {
+    const totalPaid = calculateTotalPaid(loan.id);
+    return loan.amount_requested - totalPaid;
   };
 
   if (loading) {
@@ -321,6 +390,52 @@ export default function MemberProfile() {
                 </p>
               )}
             </div>
+          </section>
+
+          {/* Loans Section */}
+          <section className="bg-gray-50 p-6 rounded-lg col-span-2">
+            <h3 className="text-xl font-semibold mb-4 border-b pb-2">Loans</h3>
+            {loans.length === 0 ? (
+              <p className="text-gray-600">No active loans found.</p>
+            ) : (
+              <div className="space-y-4">
+                {loans.map((loan) => (
+                  <div key={loan.id} className="p-4 bg-white shadow rounded-lg border-l-4 border-blue-500">
+                    <h4 className="text-lg font-semibold mb-2 text-blue-900">{loan.purpose || "Unspecified Loan"}</h4>
+                    <p className="text-gray-700">
+                      <strong>Loan Amount:</strong> KES {formatAmount(loan.amount_requested)}
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Repayment Period:</strong> {loan.repayment_period} months
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Total Paid:</strong> KES {formatAmount(calculateTotalPaid(loan.id))}
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Balance Due:</strong> KES {formatAmount(calculateBalance(loan))}
+                    </p>
+                    <p className="text-gray-700">
+                      <strong>Status:</strong> {loan.status}
+                    </p>
+                    <h5 className="mt-4 font-semibold text-gray-800">Payment History:</h5>
+                    {payments[loan.id]?.length > 0 ? (
+                      <ul className="mt-2 space-y-2">
+                        {payments[loan.id].map((payment, index) => (
+                          <li key={index} className="py-2 border-b border-gray-200">
+                            KES {formatAmount(payment.amount_paid)} -{" "}
+                            {payment.created_at
+                              ? new Date(payment.created_at).toLocaleDateString()
+                              : "Unknown date"}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500">No payments made yet.</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </div>

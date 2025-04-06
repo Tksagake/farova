@@ -310,6 +310,7 @@ const LoansPage = () => {
                   setSelectedLoan({ ...selectedLoan, status: newStatus });
                 }}
               >
+                <option value="pending">Pending</option>
                 <option value="disbursed">Disbursed</option>
                 <option value="partially_repaid">Partially Repaid</option>
                 <option value="fully_repaid">Fully Repaid</option>
